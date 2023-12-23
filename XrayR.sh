@@ -524,11 +524,13 @@ show_menu() {
   ${green}8.${plain} 查看 XrayR 日志
 ————————————————
   ${green}9.${plain} 设置 XrayR 开机自启
- ${green}10.${plain} 取消 XrayR 开机自启
+  ${green}10.${plain} 取消 XrayR 开机自启
 ————————————————
- ${green}11.${plain} 一键安装 bbr (最新内核)
- ${green}12.${plain} 查看 XrayR 版本 
- ${green}13.${plain} 升级维护脚本
+  ${green}11.${plain} 一键安装 bbr (最新内核)
+  ${green}12.${plain} 查看 XrayR 版本 
+  ${green}13.${plain} 升级维护脚本
+  ${green}14.${plain} 放开防火墙端口
+  ${green}15.${plain} 生成配置文件
  "
  #后续更新可加入上方字符串中
     show_status
