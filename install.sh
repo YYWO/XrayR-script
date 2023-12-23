@@ -17,13 +17,13 @@ elif cat /etc/issue | grep -Eqi "debian"; then
     release="debian"
 elif cat /etc/issue | grep -Eqi "ubuntu"; then
     release="ubuntu"
-elif cat /etc/issue | grep -Eqi "centos|red hat|redhat|rocky|alma|oracle linux"; then
+elif cat /etc/issue | grep -Eqi "centos|red hat|redhat"; then
     release="centos"
 elif cat /proc/version | grep -Eqi "debian"; then
     release="debian"
 elif cat /proc/version | grep -Eqi "ubuntu"; then
     release="ubuntu"
-elif cat /proc/version | grep -Eqi "centos|red hat|redhat|rocky|alma|oracle linux"; then
+elif cat /proc/version | grep -Eqi "centos|red hat|redhat"; then
     release="centos"
 else
     echo -e "${red}未检测到系统版本，请联系脚本作者！${plain}\n" && exit 1
@@ -48,6 +48,8 @@ if [ "$(getconf WORD_BIT)" != '32' ] && [ "$(getconf LONG_BIT)" != '64' ] ; then
     echo "本软件不支持 32 位系统(x86)，请使用 64 位系统(x86_64)，如果检测有误，请联系作者"
     exit 2
 fi
+
+os_version=""
 
 # os version
 if [[ -f /etc/os-release ]]; then
@@ -76,7 +78,7 @@ install_base() {
         yum install epel-release -y
         yum install wget curl unzip tar crontabs socat -y
     else
-        apt-get update -y
+        apt update -y
         apt install wget curl unzip tar cron socat -y
     fi
 }
@@ -100,31 +102,35 @@ install_acme() {
 
 install_XrayR() {
     if [[ -e /usr/local/XrayR/ ]]; then
-        rm -rf /usr/local/XrayR/
+        rm /usr/local/XrayR/ -rf
     fi
 
     mkdir /usr/local/XrayR/ -p
-    cd /usr/local/XrayR/
+	cd /usr/local/XrayR/
 
     if  [ $# == 0 ] ;then
-        last_version=$(curl -Ls "https://api.github.com/repos/XrayR-project//XrayR/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        last_version=$(curl -Ls "https://api.github.com/repos/XrayR-project/XrayR/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
         if [[ ! -n "$last_version" ]]; then
             echo -e "${red}检测 XrayR 版本失败，可能是超出 Github API 限制，请稍后再试，或手动指定 XrayR 版本安装${plain}"
             exit 1
         fi
         echo -e "检测到 XrayR 最新版本：${last_version}，开始安装"
-        wget -q -N --no-check-certificate -O /usr/local/XrayR/XrayR-linux.zip https://github.com/XrayR-project//XrayR/releases/download/${last_version}/XrayR-linux-${arch}.zip
+        wget -q -N --no-check-certificate -O /usr/local/XrayR/XrayR-linux.zip https://github.com/XrayR-project/XrayR/releases/download/${last_version}/XrayR-linux-${arch}.zip
         if [[ $? -ne 0 ]]; then
             echo -e "${red}下载 XrayR 失败，请确保你的服务器能够下载 Github 的文件${plain}"
             exit 1
         fi
     else
-        last_version=$1
-        url="https://github.com/XrayR-project//XrayR/releases/download/${last_version}/XrayR-linux-${arch}.zip"
-        echo -e "开始安装 XrayR v$1"
+        if [[ $1 == v* ]]; then
+            last_version=$1
+	else
+	    last_version="v"$1
+	fi
+        url="https://github.com/XrayR-project/XrayR/releases/download/${last_version}/XrayR-linux-${arch}.zip"
+        echo -e "开始安装 XrayR ${last_version}"
         wget -q -N --no-check-certificate -O /usr/local/XrayR/XrayR-linux.zip ${url}
         if [[ $? -ne 0 ]]; then
-            echo -e "${red}下载 XrayR v$1 失败，请确保此版本存在${plain}"
+            echo -e "${red}下载 XrayR ${last_version} 失败，请确保此版本存在${plain}"
             exit 1
         fi
     fi
@@ -134,7 +140,7 @@ install_XrayR() {
     chmod +x XrayR
     mkdir /etc/XrayR/ -p
     rm /etc/systemd/system/XrayR.service -f
-    file="https://github.com/YYWO/XrayR-script/raw/main/XrayR.service"
+    file="https://github.com/XrayR-project/XrayR-release/raw/master/XrayR.service"
     wget -q -N --no-check-certificate -O /etc/systemd/system/XrayR.service ${file}
     #cp -f XrayR.service /etc/systemd/system/
     systemctl daemon-reload
@@ -175,7 +181,7 @@ install_XrayR() {
     if [[ ! -f /etc/XrayR/rulelist ]]; then
         cp rulelist /etc/XrayR/
     fi
-    curl -o /usr/bin/XrayR -Ls https://raw.githubusercontent.com/YYWO/XrayR-script/main/XrayR.sh
+    curl -o /usr/bin/XrayR -Ls https://raw.githubusercontent.com/XrayR-project/XrayR-release/master/XrayR.sh
     chmod +x /usr/bin/XrayR
     ln -s /usr/bin/XrayR /usr/bin/xrayr # 小写兼容
     chmod +x /usr/bin/xrayr
@@ -184,24 +190,24 @@ install_XrayR() {
     echo -e ""
     echo "XrayR 管理脚本使用方法 (兼容使用xrayr执行，大小写不敏感): "
     echo "------------------------------------------"
-    echo "XrayR              - 显示管理菜单 (功能更多)"
-    echo "XrayR start        - 启动 XrayR"
-    echo "XrayR stop         - 停止 XrayR"
-    echo "XrayR restart      - 重启 XrayR"
-    echo "XrayR status       - 查看 XrayR 状态"
-    echo "XrayR enable       - 设置 XrayR 开机自启"
-    echo "XrayR disable      - 取消 XrayR 开机自启"
-    echo "XrayR log          - 查看 XrayR 日志"
-    echo "XrayR generate     - 生成 XrayR 配置文件"
-    echo "XrayR update       - 更新 XrayR"
-    echo "XrayR update x.x.x - 更新 XrayR 指定版本"
-    echo "XrayR install      - 安装 XrayR"
-    echo "XrayR uninstall    - 卸载 XrayR"
-    echo "XrayR version      - 查看 XrayR 版本"
+    echo "XrayR                    - 显示管理菜单 (功能更多)"
+    echo "XrayR start              - 启动 XrayR"
+    echo "XrayR stop               - 停止 XrayR"
+    echo "XrayR restart            - 重启 XrayR"
+    echo "XrayR status             - 查看 XrayR 状态"
+    echo "XrayR enable             - 设置 XrayR 开机自启"
+    echo "XrayR disable            - 取消 XrayR 开机自启"
+    echo "XrayR log                - 查看 XrayR 日志"
+    echo "XrayR update             - 更新 XrayR"
+    echo "XrayR update x.x.x       - 更新 XrayR 指定版本"
+    echo "XrayR config             - 显示配置文件内容"
+    echo "XrayR install            - 安装 XrayR"
+    echo "XrayR uninstall          - 卸载 XrayR"
+    echo "XrayR version            - 查看 XrayR 版本"
     echo "------------------------------------------"
 }
 
 echo -e "${green}开始安装${plain}"
 install_base
-install_acme
+# install_acme
 install_XrayR $1
