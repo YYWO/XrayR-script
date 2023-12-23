@@ -354,10 +354,11 @@ generate_config_file() {
     read -rp "是否继续生成配置文件？(y/n)" generate_config_file_continue
     if [[ $generate_config_file_continue =~ "y"|"Y" ]]; then
         echo -e "${yellow}请选择你的机场面板，如未列出则不支持：${plain}"
-        echo -e "${green}1. SSpanel ${plain}"
+        echo -e "${green}1. NewV2board ${plain}"
         echo -e "${green}2. V2board ${plain}"
-        echo -e "${green}3. PMpanel ${plain}"
-        echo -e "${green}4. Proxypanel ${plain}"
+        echo -e "${green}3. SSpanel ${plain}"
+        echo -e "${green}4. PMpanel ${plain}"
+        echo -e "${green}5. Proxypanel ${plain}"
         read -rp "请输入机场面板 [1-5，默认1]：" PanelType
         case "$PanelType" in
             1 ) PanelType="NewV2board" ;;
@@ -371,10 +372,10 @@ generate_config_file() {
         read -rp "请输入面板对接API Key：" ApiKey
         read -rp "请输入节点Node ID:" NodeID
         echo -e "${yellow}请选择节点传输协议，如未列出则不支持：${plain}"
-        echo -e "${green}1. Shadowsocks ${plain}"
-        echo -e "${green}2. Shadowsocks-Plugin ${plain}"
-        echo -e "${green}3. V2ray ${plain}"
-        echo -e "${green}4. Trojan ${plain}"
+        echo -e "${green}1. V2ray ${plain}"
+        echo -e "${green}2. Shadowsocks ${plain}"
+        echo -e "${green}3. Trojan ${plain}"
+        echo -e "${green}4. Shadowsocks-Plugin ${plain}"
         read -rp "请输入机场传输协议 [1-4，默认1]：" NodeType
         case "$NodeType" in
             1 ) NodeType="V2ray" ;;
