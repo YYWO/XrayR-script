@@ -5,6 +5,8 @@ green='\033[0;32m'
 yellow='\033[0;33m'
 plain='\033[0m'
 
+version="v1.0.0"
+
 # check root
 [[ $EUID -ne 0 ]] && echo -e "${red}错误: ${plain} 必须使用root用户运行此脚本！\n" && exit 1
 
@@ -15,17 +17,19 @@ elif cat /etc/issue | grep -Eqi "debian"; then
     release="debian"
 elif cat /etc/issue | grep -Eqi "ubuntu"; then
     release="ubuntu"
-elif cat /etc/issue | grep -Eqi "centos|red hat|redhat|rocky|alma|oracle linux"; then
+elif cat /etc/issue | grep -Eqi "centos|red hat|redhat"; then
     release="centos"
 elif cat /proc/version | grep -Eqi "debian"; then
     release="debian"
 elif cat /proc/version | grep -Eqi "ubuntu"; then
     release="ubuntu"
-elif cat /proc/version | grep -Eqi "centos|red hat|redhat|rocky|alma|oracle linux"; then
+elif cat /proc/version | grep -Eqi "centos|red hat|redhat"; then
     release="centos"
 else
     echo -e "${red}未检测到系统版本，请联系脚本作者！${plain}\n" && exit 1
 fi
+
+os_version=""
 
 # os version
 if [[ -f /etc/os-release ]]; then
@@ -51,12 +55,12 @@ fi
 
 confirm() {
     if [[ $# > 1 ]]; then
-        echo && read -rp "$1 [默认$2]: " temp
+        echo && read -p "$1 [默认$2]: " temp
         if [[ x"${temp}" == x"" ]]; then
             temp=$2
         fi
     else
-        read -rp "$1 [y/n]: " temp
+        read -p "$1 [y/n]: " temp
     fi
     if [[ x"${temp}" == x"y" || x"${temp}" == x"Y" ]]; then
         return 0
@@ -80,7 +84,7 @@ before_show_menu() {
 }
 
 install() {
-    bash <(curl -Ls https://raw.githubusercontents.com/YYWO/XrayR-script/main/install.sh)
+    bash <(curl -Ls https://raw.githubusercontent.com/XrayR-project/XrayR-release/master/install.sh)
     if [[ $? == 0 ]]; then
         if [[ $# == 0 ]]; then
             start
@@ -96,7 +100,15 @@ update() {
     else
         version=$2
     fi
-    bash <(curl -Ls https://raw.githubusercontents.com/YYWO/XrayR-script/main/install.sh) $version
+#    confirm "本功能会强制重装当前最新版，数据不会丢失，是否继续?" "n"
+#    if [[ $? != 0 ]]; then
+#        echo -e "${red}已取消${plain}"
+#        if [[ $1 != 0 ]]; then
+#            before_show_menu
+#        fi
+#        return 0
+#    fi
+    bash <(curl -Ls https://raw.githubusercontent.com/XrayR-project/XrayR-release/master/install.sh) $version
     if [[ $? == 0 ]]; then
         echo -e "${green}更新完成，已自动重启 XrayR，请使用 XrayR log 查看运行日志${plain}"
         exit
@@ -118,7 +130,7 @@ config() {
             ;;
         1)
             echo -e "检测到您未启动XrayR或XrayR自动重启失败，是否查看日志？[Y/n]" && echo
-            read -e -rp "(默认: y):" yn
+            read -e -p "(默认: y):" yn
             [[ -z ${yn} ]] && yn="y"
             if [[ ${yn} == [Yy] ]]; then
                show_log
@@ -245,11 +257,20 @@ show_log() {
 }
 
 install_bbr() {
-    bash <(curl -L -s https://raw.githubusercontents.com/chiakge/Linux-NetSpeed/master/tcp.sh)
+    bash <(curl -L -s https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh)
+    #if [[ $? == 0 ]]; then
+    #    echo ""
+    #    echo -e "${green}安装 bbr 成功，请重启服务器${plain}"
+    #else
+    #    echo ""
+    #    echo -e "${red}下载 bbr 安装脚本失败，请检查本机能否连接 Github${plain}"
+    #fi
+
+    #before_show_menu
 }
 
 update_shell() {
-    wget -O /usr/bin/XrayR -N --no-check-certificate https://raw.githubusercontents.com/YYWO/XrayR-script/main/XrayR.sh
+    wget -O /usr/bin/XrayR -N --no-check-certificate https://raw.githubusercontent.com/YYWO/XrayR-script/main/XrayR.sh
     if [[ $? != 0 ]]; then
         echo ""
         echo -e "${red}下载脚本失败，请检查本机能否连接 Github${plain}"
@@ -342,6 +363,23 @@ show_XrayR_version() {
     if [[ $# == 0 ]]; then
         before_show_menu
     fi
+}
+
+# 放开防火墙端口
+open_ports() {
+    systemctl stop firewalld.service 2>/dev/null
+    systemctl disable firewalld.service 2>/dev/null
+    setenforce 0 2>/dev/null
+    ufw disable 2>/dev/null
+    iptables -P INPUT ACCEPT 2>/dev/null
+    iptables -P FORWARD ACCEPT 2>/dev/null
+    iptables -P OUTPUT ACCEPT 2>/dev/null
+    iptables -t nat -F 2>/dev/null
+    iptables -t mangle -F 2>/dev/null
+    iptables -F 2>/dev/null
+    iptables -X 2>/dev/null
+    netfilter-persistent save 2>/dev/null
+    echo -e "${green}放开防火墙端口成功！${plain}"
 }
 
 generate_config_file() {
@@ -450,23 +488,6 @@ EOF
     fi
 }
 
-# 放开防火墙端口
-open_ports() {
-    systemctl stop firewalld.service 2>/dev/null
-    systemctl disable firewalld.service 2>/dev/null
-    setenforce 0 2>/dev/null
-    ufw disable 2>/dev/null
-    iptables -P INPUT ACCEPT 2>/dev/null
-    iptables -P FORWARD ACCEPT 2>/dev/null
-    iptables -P OUTPUT ACCEPT 2>/dev/null
-    iptables -t nat -F 2>/dev/null
-    iptables -t mangle -F 2>/dev/null
-    iptables -F 2>/dev/null
-    iptables -X 2>/dev/null
-    netfilter-persistent save 2>/dev/null
-    echo -e "${green}放开防火墙端口成功！${plain}"
-}
-
 show_usage() {
     echo "XrayR 管理脚本使用方法: "
     echo "------------------------------------------"
@@ -478,9 +499,8 @@ show_usage() {
     echo "XrayR enable       - 设置 XrayR 开机自启"
     echo "XrayR disable      - 取消 XrayR 开机自启"
     echo "XrayR log          - 查看 XrayR 日志"
-    echo "XrayR generate     - 生成 XrayR 配置文件"
     echo "XrayR update       - 更新 XrayR"
-    echo "XrayR update x.x.x - 安装 XrayR 指定版本"
+    echo "XrayR update x.x.x - 更新 XrayR 指定版本"
     echo "XrayR install      - 安装 XrayR"
     echo "XrayR uninstall    - 卸载 XrayR"
     echo "XrayR version      - 查看 XrayR 版本"
@@ -508,52 +528,79 @@ show_menu() {
 ————————————————
  ${green}11.${plain} 一键安装 bbr (最新内核)
  ${green}12.${plain} 查看 XrayR 版本 
- ${green}13.${plain} 升级 XrayR 维护脚本
- ${green}14.${plain} 生成 XrayR 配置文件
- ${green}15.${plain} 放行 VPS 的所有网络端口
+ ${green}13.${plain} 升级维护脚本
  "
  #后续更新可加入上方字符串中
     show_status
-    echo && read -rp "请输入选择 [0-14]: " num
+    echo && read -p "请输入选择 [0-13]: " num
 
     case "${num}" in
-        0) config ;;
-        1) check_uninstall && install ;;
-        2) check_install && update ;;
-        3) check_install && uninstall ;;
-        4) check_install && start ;;
-        5) check_install && stop ;;
-        6) check_install && restart ;;
-        7) check_install && status ;;
-        8) check_install && show_log ;;
-        9) check_install && enable ;;
-        10) check_install && disable ;;
-        11) install_bbr ;;
-        12) check_install && show_XrayR_version ;;
-        13) update_shell ;;
-        14) generate_config_file ;;
-        15) open_ports ;;
-        *) echo -e "${red}请输入正确的数字 [0-14]${plain}" ;;
+        0) config
+        ;;
+        1) check_uninstall && install
+        ;;
+        2) check_install && update
+        ;;
+        3) check_install && uninstall
+        ;;
+        4) check_install && start
+        ;;
+        5) check_install && stop
+        ;;
+        6) check_install && restart
+        ;;
+        7) check_install && status
+        ;;
+        8) check_install && show_log
+        ;;
+        9) check_install && enable
+        ;;
+        10) check_install && disable
+        ;;
+        11) install_bbr
+        ;;
+        12) check_install && show_XrayR_version
+        ;;
+        13) update_shell
+        ;;
+        14) open_ports
+        ;;
+        15) generate_config_file
+        ;;
+        *) echo -e "${red}请输入正确的数字 [0-12]${plain}"
+        ;;
     esac
 }
 
 
 if [[ $# > 0 ]]; then
     case $1 in
-        "start") check_install 0 && start 0 ;;
-        "stop") check_install 0 && stop 0 ;;
-        "restart") check_install 0 && restart 0 ;;
-        "status") check_install 0 && status 0 ;;
-        "enable") check_install 0 && enable 0 ;;
-        "disable") check_install 0 && disable 0 ;;
-        "log") check_install 0 && show_log 0 ;;
-        "update") check_install 0 && update 0 $2 ;;
-        "config") config $* ;;
-        "generate") generate_config_file ;;
-        "install") check_uninstall 0 && install 0 ;;
-        "uninstall") check_install 0 && uninstall 0 ;;
-        "version") check_install 0 && show_XrayR_version 0 ;;
-        "update_shell") update_shell ;;
+        "start") check_install 0 && start 0
+        ;;
+        "stop") check_install 0 && stop 0
+        ;;
+        "restart") check_install 0 && restart 0
+        ;;
+        "status") check_install 0 && status 0
+        ;;
+        "enable") check_install 0 && enable 0
+        ;;
+        "disable") check_install 0 && disable 0
+        ;;
+        "log") check_install 0 && show_log 0
+        ;;
+        "update") check_install 0 && update 0 $2
+        ;;
+        "config") config $*
+        ;;
+        "install") check_uninstall 0 && install 0
+        ;;
+        "uninstall") check_install 0 && uninstall 0
+        ;;
+        "version") check_install 0 && show_XrayR_version 0
+        ;;
+        "update_shell") update_shell
+        ;;
         *) show_usage
     esac
 else
