@@ -355,13 +355,13 @@ generate_config_file() {
     if [[ $generate_config_file_continue =~ "y"|"Y" ]]; then
         echo -e "${yellow}请选择你的机场面板，如未列出则不支持：${plain}"
         echo -e "${green}1. SSpanel ${plain}"
-        echo -e "${green}2. V2board ${plain}"
+        echo -e "${green}2. NewV2board ${plain}"
         echo -e "${green}3. PMpanel ${plain}"
         echo -e "${green}4. Proxypanel ${plain}"
         read -rp "请输入机场面板 [1-4，默认1]：" PanelType
         case "$PanelType" in
             1 ) PanelType="SSpanel" ;;
-            2 ) PanelType="V2board" ;;
+            2 ) PanelType="NewV2board" ;;
             3 ) PanelType="PMpanel" ;;
             4 ) PanelType="Proxypanel" ;;
             * ) PanelType="SSpanel" ;;
@@ -401,7 +401,7 @@ ConnetionConfig:
   BufferSize: 64 # The internal cache size of each connection, kB 
 Nodes:
   -
-    PanelType: "$PanelType" # Panel type: SSpanel, V2board, PMpanel, Proxypanel
+    PanelType: "$PanelType" # Panel type: SSpanel, NewV2board, PMpanel, Proxypanel
     ApiConfig:
       ApiHost: "$ApiHost"
       ApiKey: "$ApiKey"
